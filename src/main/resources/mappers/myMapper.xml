@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kurly.demo.data.RSSIMapper">
+    <resultMap id="rssid" type="com.kurly.demo.data.entity.RSSID">
+        <result column="pos_x" property="pos_x"></result>
+        <result column="pos_y" property="pos_y"></result>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.kurly.demo.data.entity.RSSID">
+        INSERT
+                wifiinfo (pos_x, pos_y, SSID, BSSID, frequency, level, building, uuid, method, date)
+        VALUES
+                <foreach collection="list" item="item" separator=",">
+                    <choose>
+                        <when test="item.date == null">
+                            (#{item.pos_x}, #{item.pos_y}, #{item.SSID}, #{item.BSSID}, #{item.frequency}, #{item.level}, #{item.building}, #{item.uuid}, #{item.method}, NOW())
+                        </when>
+                        <otherwise>
+                            (#{item.pos_x}, #{item.pos_y}, #{item.SSID}, #{item.BSSID}, #{item.frequency}, #{item.level}, #{item.building}, #{item.uuid}, #{item.method}, #{item.date})
+                        </otherwise>
+                    </choose>
+                </foreach>
+    </insert>
+
+    <insert id="insertEstimate" parameterType="com.kurly.demo.data.entity.Estimate">
+        INSERT
+            fingerprint (pos_x, pos_y, uuid, est_x, est_y, k, threshold, building, SSID, method, algorithmVersion, date)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            <choose>
+                <when test="item.date == null">
+                    (#{item.pos_x}, #{item.pos_y}, #{item.uuid}, #{item.est_x}, #{item.est_y}, #{item.k}, #{item.threshold}, #{item.building}, #{item.SSID}, #{item.method}, #{item.algorithmVersion}, NOW())
+                </when>
+                <otherwise>
+                    (#{item.pos_x}, #{item.pos_y}, #{item.uuid}, #{item.est_x}, #{item.est_y}, #{item.k}, #{item.threshold}, #{item.building}, #{item.SSID}, #{item.method}, #{item.algorithmVersion}, #{item.date})
+                </otherwise>
+            </choose>
+        </foreach>
+    </insert>
+
+    <insert id="insertBarcode" parameterType="com.kurly.demo.data.entity.Barcode">
+        INSERT
+        barcode (pos_x, pos_y, barcode_serial, building, date)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            <choose>
+                <when test="item.date == null">
+                    (#{item.pos_x}, #{item.pos_y}, #{item.barcode_serial}, #{item.building}, NOW())
+                </when>
+                <otherwise>
+                    (#{item.pos_x}, #{item.pos_y}, #{item.barcode_serial}, #{item.building}, #{item.date})
+                </otherwise>
+            </choose>
+        </foreach>
+    </insert>
+
+    <select id="findDynamic" resultMap="rssid">
+        SELECT * FROM wifiinfo WHERE date BETWEEN #{from} AND #{to}
+        <if test="pos_x != -1 or pos_y != -1">
+            AND pos_x BETWEEN #{pos_x} AND #{pos_x}+1
+            AND pos_y BETWEEN #{pos_y} AND #{pos_y}+1
+        </if>
+        <if test="building != null">
+            AND building = #{building}
+        </if>
+        <if test="SSID != null">
+            AND SSID = #{SSID}
+        </if>
+    </select>
+
+    <delete id="deleteDynamic">
+        DELETE FROM wifiinfo
+        WHERE date BETWEEN #{from} AND #{to}
+        <if test="building != null">
+            AND building = #{building}
+        </if>
+        <if test="SSID != null">
+            AND SSID = #{SSID}
+        </if>
+        <if test="uuid != null">
+            AND uuid = #{uuid}
+        </if>
+    </delete>
+
+</mapper>
